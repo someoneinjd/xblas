@@ -34,8 +34,8 @@ A [matrix-multiply systolic array](reconfigurable_matmul/README.md) supports
 | [gemm](https://oneapi-src.github.io/oneMKL/domains/blas/gemm.html) | $\alpha * op(A) * op(B)+\beta * C$ |Multiplication of general matrices. $op(X)$ is one of $X$, $X^T$, and $X^H$ | sgemm, dgemm, cgemm, zgemm|
 | [symm](https://oneapi-src.github.io/oneMKL/domains/blas/symm.html) | $\alpha * A* B+\beta * C$, or  $\alpha * B * A+\beta * C$ | $A$ is a symmetric matrix | ssymm, dsymm, csymm, zsymm |
 | [hemm](https://oneapi-src.github.io/oneMKL/domains/blas/hemm.html) |$\alpha * A * B+\beta * C$, or  $\alpha * B * A+\beta * C$ | $A$ is a Hermitian matrix | chemm, zhemm |
-| syrk | $C \leftarrow \alpha * op(A) * op(A)^T + \beta * C$ |$op(X)=X$ or $op(X) = X^T$, $C$ is a symmtric matrix. | ssyrk, dsyrk, csyrk, zsyrk|
-| herk | $C \leftarrow \alpha * op(A) * op(A)^H + \beta * C$ |$op(X)=X$ or $op(X) = X^H$, $C$ is a Hermitian matrix. |cherk, zherk|
+| [syrk](https://oneapi-src.github.io/oneMKL/domains/blas/syrk.html) | $C \leftarrow \alpha * op(A) * op(A)^T + \beta * C$ |$op(X)=X$ or $op(X) = X^T$, $C$ is a symmtric matrix. | ssyrk, dsyrk, csyrk, zsyrk|
+| [herk](https://oneapi-src.github.io/oneMKL/domains/blas/herk.html) | $C \leftarrow \alpha * op(A) * op(A)^H + \beta * C$ |$op(X)=X$ or $op(X) = X^H$, $C$ is a Hermitian matrix. |cherk, zherk|
 
 ### Restrictions
 
