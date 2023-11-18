@@ -20,11 +20,11 @@ A [dot-product systolic array](reconfigurable_dotprod/README.md) supports
 The `VARIATION` column shows the variations of each kernel, usually the kernel name prefixed by the output/input data types. A data type can be `s` (single-precision), `d`(double-precision), `c`(complex single-precision) or `z`(complex double-precision).
 
 A [vector-addition systolic array](reconfigurable_vecadd/README.md) supports
-| Kernel            | Formula                                           | Description                                                                                                                                |VARIATION |  Note |
-| ----------------- | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |-----| --- |
-| [axpy](https://oneapi-src.github.io/oneMKL/domains/blas/axpy.html)   | $\alpha * \vec{X}+\vec{Y}$                           | Vector addition                                                 | saxpy, daxpy, caxpy, zaxpy ||
-| [scal](https://oneapi-src.github.io/oneMKL/domains/blas/scal.html)   | $\alpha * \vec{X}$                                   | Scale a vector                                                  | sscal, dscal, cscal, zscal | csscal and zdscal are to be supported in the next release |
-| [copy](https://oneapi-src.github.io/oneMKL/domains/blas/copy.html)   | $\vec{Y}\leftarrow\vec{X}$                        | Copy a vector                                                      | scopy, dcopy, ccopy, zcopy | |
+| Kernel            | Formula                                           | Description                                                                                                                                |VARIATION |
+| ----------------- | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |-----|
+| [axpy](https://oneapi-src.github.io/oneMKL/domains/blas/axpy.html)   | $\alpha * \vec{X}+\vec{Y}$                           | Vector addition                                                 | saxpy, daxpy, caxpy, zaxpy |
+| [scal](https://oneapi-src.github.io/oneMKL/domains/blas/scal.html)   | $\alpha * \vec{X}$                                   | Scale a vector                                                  | sscal, dscal, cscal, zscal |
+| [copy](https://oneapi-src.github.io/oneMKL/domains/blas/copy.html)   | $\vec{Y}\leftarrow\vec{X}$                        | Copy a vector                                                      | scopy, dcopy, ccopy, zcopy |
 
 ## `Level 3 kernels`
 
