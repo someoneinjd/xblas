@@ -1,6 +1,6 @@
 # `BLAS`
 
-This directory contains FPGA reference designs for the standard BLAS kernels defined in [oneMKL](https://oneapi-src.github.io/oneMKL/domains/blas/blas.html). The row-major, USM-based SYCL interface is supported.
+This directory contains FPGA reference designs for the standard BLAS kernels defined in oneMKL. The row-major, USM-based SYCL interface is supported.
 
 Kernels of similar computes are grouped and generalized into a single systolic array so that the array can be dynamically reconfigured to simulate all the kernels, minimizing maintenance cost without losing performance. Below are the kernels supported in this release:
 
@@ -10,32 +10,32 @@ A [dot-product systolic array](reconfigurable_dotprod/README.md) supports
 
 | Kernel                                                                 | Formula                                               | Description                                                                                        | VARIATION                    |
 | ---------------------------------------------------------------------- | ----------------------------------------------------- | -------------------------------------------------------------------------------------------------- | ---------------------------- |
-| [dot](https://oneapi-src.github.io/oneMKL/domains/blas/dot.html)       | $\vec{X}\cdot \vec{Y}$                                | Dot product.                                                                                       | sdot, ddot, dsdot            |
-| [sdsdot](https://oneapi-src.github.io/oneMKL/domains/blas/sdsdot.html) | $sb+\vec{X}\cdot \vec{Y}$                             | Return a single-precision result with a dot product of two vectors accumulated in double-precision | sdsdot                       |
-| [dotc](https://oneapi-src.github.io/oneMKL/domains/blas/dotc.html)     | $\overline{\vec{X}}\cdot \vec{Y}$                     | A dot product between two complex vectors, conjugating the first of them                           | cdotc, zdotc                 |
-| [dotu](https://oneapi-src.github.io/oneMKL/domains/blas/dotu.html)     | $\vec{X}\cdot \vec{Y}$                                | A dot product between two complex vectors                                                          | cdotu, zdotu                 |
-| [nrm2](https://oneapi-src.github.io/oneMKL/domains/blas/nrm2.html)     | $\parallel \vec{X} \parallel$                         | Euclidean norm of a vector                                                                         | snrm2, dnrm2, scnrm2, dznrm2 |
-| [asum](https://oneapi-src.github.io/oneMKL/domains/blas/asum.html)     | sum of $\mid Re(x_i)\mid+\mid Im(x_i)\mid, \forall i$ | Sum of the magnitudes of elements                                                                  | sasum, dasum, scasum, dzasum |
+| dot       | $\vec{X}\cdot \vec{Y}$                                | Dot product.                                                                                       | sdot, ddot, dsdot            |
+| sdsdot | $sb+\vec{X}\cdot \vec{Y}$                             | Return a single-precision result with a dot product of two vectors accumulated in double-precision | sdsdot                       |
+| dotc     | $\overline{\vec{X}}\cdot \vec{Y}$                     | A dot product between two complex vectors, conjugating the first of them                           | cdotc, zdotc                 |
+| dotu     | $\vec{X}\cdot \vec{Y}$                                | A dot product between two complex vectors                                                          | cdotu, zdotu                 |
+| nrm2     | $\parallel \vec{X} \parallel$                         | Euclidean norm of a vector                                                                         | snrm2, dnrm2, scnrm2, dznrm2 |
+| asum     | sum of $\mid Re(x_i)\mid+\mid Im(x_i)\mid, \forall i$ | Sum of the magnitudes of elements                                                                  | sasum, dasum, scasum, dzasum |
 
 The `VARIATION` column shows the variations of each kernel, usually the kernel name prefixed by the output/input data types. A data type can be `s` (single-precision), `d`(double-precision), `c`(complex single-precision) or `z`(complex double-precision).
 
 A [vector-addition systolic array](reconfigurable_vecadd/README.md) supports
 | Kernel            | Formula                                           | Description                                                                                                                                |VARIATION |
 | ----------------- | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |-----|
-| [axpy](https://oneapi-src.github.io/oneMKL/domains/blas/axpy.html)   | $\alpha * \vec{X}+\vec{Y}$                           | Vector addition                                                 | saxpy, daxpy, caxpy, zaxpy |
-| [scal](https://oneapi-src.github.io/oneMKL/domains/blas/scal.html)   | $\alpha * \vec{X}$                                   | Scale a vector                                                  | sscal, dscal, cscal, zscal |
-| [copy](https://oneapi-src.github.io/oneMKL/domains/blas/copy.html)   | $\vec{Y}\leftarrow\vec{X}$                        | Copy a vector                                                      | scopy, dcopy, ccopy, zcopy |
+| axpy   | $\alpha * \vec{X}+\vec{Y}$                           | Vector addition                                                 | saxpy, daxpy, caxpy, zaxpy |
+| scal   | $\alpha * \vec{X}$                                   | Scale a vector                                                  | sscal, dscal, cscal, zscal |
+| copy   | $\vec{Y}\leftarrow\vec{X}$                        | Copy a vector                                                      | scopy, dcopy, ccopy, zcopy |
 
 ## `Level 3 kernels`
 
 A [matrix-multiply systolic array](reconfigurable_matmul/README.md) supports
  Kernel          | Formula             | Description       |VARIATION |
 | --------------- | ------------------- | ----------|-----|
-| [gemm](https://oneapi-src.github.io/oneMKL/domains/blas/gemm.html) | $\alpha * op(A) * op(B)+\beta * C$ |Multiplication of general matrices. $op(X)$ is one of $X$, $X^T$, and $X^H$ | sgemm, dgemm, cgemm, zgemm|
-| [symm](https://oneapi-src.github.io/oneMKL/domains/blas/symm.html) | $\alpha * A* B+\beta * C$, or  $\alpha * B * A+\beta * C$ | $A$ is a symmetric matrix | ssymm, dsymm, csymm, zsymm |
-| [hemm](https://oneapi-src.github.io/oneMKL/domains/blas/hemm.html) |$\alpha * A * B+\beta * C$, or  $\alpha * B * A+\beta * C$ | $A$ is a Hermitian matrix | chemm, zhemm |
-| [syrk](https://oneapi-src.github.io/oneMKL/domains/blas/syrk.html) | $C \leftarrow \alpha * op(A) * op(A)^T + \beta * C$ |$op(X)=X$ or $op(X) = X^T$, $C$ is a symmtric matrix. | ssyrk, dsyrk, csyrk, zsyrk|
-| [herk](https://oneapi-src.github.io/oneMKL/domains/blas/herk.html) | $C \leftarrow \alpha * op(A) * op(A)^H + \beta * C$ |$op(X)=X$ or $op(X) = X^H$, $C$ is a Hermitian matrix. |cherk, zherk|
+| gemm | $\alpha * op(A) * op(B)+\beta * C$ |Multiplication of general matrices. $op(X)$ is one of $X$, $X^T$, and $X^H$ | sgemm, dgemm, cgemm, zgemm|
+| symm | $\alpha * A* B+\beta * C$, or  $\alpha * B * A+\beta * C$ | $A$ is a symmetric matrix | ssymm, dsymm, csymm, zsymm |
+| hemm |$\alpha * A * B+\beta * C$, or  $\alpha * B * A+\beta * C$ | $A$ is a Hermitian matrix | chemm, zhemm |
+| syrk | $C \leftarrow \alpha * op(A) * op(A)^T + \beta * C$ |$op(X)=X$ or $op(X) = X^T$, $C$ is a symmtric matrix. | ssyrk, dsyrk, csyrk, zsyrk|
+| herk | $C \leftarrow \alpha * op(A) * op(A)^H + \beta * C$ |$op(X)=X$ or $op(X) = X^H$, $C$ is a Hermitian matrix. |cherk, zherk|
 
 ### Restrictions
 
@@ -48,14 +48,14 @@ A [matrix-multiply systolic array](reconfigurable_matmul/README.md) supports
 All the kernels are put under the `blas` directory. Every kernel has the following files under it:
 
 * `api.hpp` - The API to invoke the kernel in any SYCL application.
-* `test.cpp` - Unit tests for correctness from [oneMKL's test suite](https://github.com/oneapi-src/oneMKL/blob/develop/tests/unit_tests/blas/), with slight changes to respect the above restrictions.
+* `test.cpp` - Unit tests for correctness from oneMKL's test suite, with slight changes to respect the above restrictions.
 * `demo.cpp` - Demonstrating how to invoke the kernel on a real FPGA hardware.
 * `CMakeLists.txt` - A cmake script to build the kernel.
 
 The reconfigurable systolic arrays (named as `reconfigurable-*`) are also under the `blas` directory. Every array has the following files under it:
 
 * `api.hpp` - The API to invoke the array.
-* `spec.cpp`: A specification of the array in a productive language, namely [T2SP](#user-content-reference). From this specification, SYCL files will be generated by a pre-installed T2SP compiler. The SYCL files are then synthesized into a bitstream for an FPGA hardware.
+* `spec.cpp`: A specification of the array in a productive language, namely T2SP. From this specification, SYCL files will be generated by a pre-installed T2SP compiler. The SYCL files are then synthesized into a bitstream for an FPGA hardware.
 * `parameters.h` : Sizes of the array. There is a `tiny` and a `large` configuration for testing correctness and performance, respectively.
 * `CMakeLists.txt` - A cmake script to build the array.
 * `README.md` - A short description of the array.
