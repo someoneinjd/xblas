@@ -22,10 +22,10 @@ void log(Args &&...args) {
 using namespace sycl;
 namespace t2sp::blas::row_major::sdotprod {
 template <typename xLoader_channel, typename yLoader_channel, typename Out_channel, int KK, int KKK>
-sycl::event stddev(sycl::queue &q_device, int X_extent_1, bool SqrtRet, int N) {
+sycl::event sdotprod(sycl::queue &q_device, int X_extent_1, bool SqrtRet, bool N) {
     std::vector<sycl::event> oneapi_kernel_events{};
     oneapi_kernel_events.push_back(q_device.submit([&](sycl::handler &h){
-          h.single_task<class kernel_mean>([=](){
+          h.single_task<class kernel_Out_class>([=](){
             float Out_channel_array;
             for (int b = 0; b < X_extent_1; b++) {
               int addr_temp;

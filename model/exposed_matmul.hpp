@@ -28,30 +28,8 @@ typedef struct {
 	bool f3;
 } cgs;
 template <typename SignalGenerator_channel, typename SA_channel, typename SB_channel, typename Product_channel, typename DC_channel, typename Out_channel, int III, int JJJ, int KKK>
-sycl::event syrk(sycl::queue &q_device, int X_extent_1, bool SqrtRet, bool N) {
+sycl::event ssssmatmul(sycl::queue &q_device, int A_extent_1, int C_extent_0, int C_extent_1, float alpha, bool HalfSpaceOut) {
     std::vector<sycl::event> oneapi_kernel_events{};
-    oneapi_kernel_events.push_back(q_device.submit([&](sycl::handler &h){
-            h.single_task<class kernel_SignalGenerator_class>([=](){
-              for (int i = 0; i < (C_extent_1 + (2 * (32 * III) - 1)) / (32 * III); i++) {
-                for (int j = (HalfSpaceOut ? i : 0); j < (C_extent_0 + (32 * JJJ - 1)) / (32 * JJJ); j++) {
-                  for (int k = 0; k < (serializer_k_extent_realized_s + 511) >> 9; k++) {
-                    for (int kk = 0; kk < 32; kk++) {
-                      for (int ii = 0; ii < 32; ii++) {
-                        for (int jj = 0; jj < 32; jj++) {
-                          bool signal0 = i < (C_extent_1 + (32 * III - 1)) / (32 * III);
-                          bool signal1 = k == 0 && kk == 0;
-                          bool signal2 = k == (serializer_k_extent_realized_s - 1) >> 9  && kk == 31;
-                          bool signal3 = jj == 0 && ii == 0 && k == (serializer_k_extent_realized_s - 1) >> 9 && kk == 31 && i < (C_extent_1 + (32 * III - 1)) / (32 * III);
-                          cgs signals = (cgs){signal0, signal1, signal2, signal3};
-                          SignalGenerator_channel::write<>(signals);
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }); //  h.single_task kernel_SignalGenerator_class
-          })); // q_device.submit
     using SA_channel_array_t = decltype(SA_channel::read<>());
     using SB_channel_array_t = decltype(SB_channel::read<>());
     oneapi_kernel_events.push_back(q_device.submit([&](sycl::handler &h){

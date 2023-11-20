@@ -14,7 +14,7 @@ where $DF(P)$ includes all legal design factor choices of the program $P$, and $
 
 ## File structure
 
-* `*.hpp`: Routines required for linear regression model training.
+* `*.hpp`: Exposed components with stream interfaces.
 
 * `predict.py`: The linear programming model implementation.
 
