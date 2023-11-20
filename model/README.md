@@ -14,7 +14,7 @@ where $DF(P)$ includes all legal design factor choices of the program $P$, and $
 
 ## File structure
 
-* `*.hpp`: Exposed components with stream interfaces.
+* `*.hpp`: Exposed components with stream interface.
 
 * `predict.py`: The linear programming model implementation.
 
