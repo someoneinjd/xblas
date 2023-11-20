@@ -12,7 +12,7 @@
 using namespace Halide;
 
 namespace t2sp::blas::row_major {
-// The API for NRM2. We choose the USM version of oneMKL DPC++ interface (https://oneapi-src.github.io/oneMKL/domains/blas/nrm2.html)
+// The API for NRM2. We choose the USM version of oneMKL DPC++ interface (nrm2.html)
 template<typename T, typename T_res>
 sycl::event nrm2(sycl::queue &queue,
                  std::int64_t n,

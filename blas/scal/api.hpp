@@ -12,7 +12,7 @@
 using namespace Halide;
 
 namespace t2sp::blas::row_major {
-// The API for SCAL. We choose the USM version of oneMKL DPC++ interface (https://oneapi-src.github.io/oneMKL/domains/blas/scal.html) with the
+// The API for SCAL. We choose the USM version of oneMKL DPC++ interface (scal.html) with the
 // restriction of standard data types (s, d, c, z) only.
 template<typename T, typename Ts>
 sycl::event scal(sycl::queue &queue,

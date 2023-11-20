@@ -12,7 +12,7 @@
 using namespace Halide;
 
 namespace t2sp::blas::row_major {
-// The API for DOT. We choose the USM version of oneMKL DPC++ interface (https://oneapi-src.github.io/oneMKL/domains/blas/dot.html).
+// The API for DOT. We choose the USM version of oneMKL DPC++ interface (dot.html).
 template<typename T_res, typename T>
 sycl::event dot(sycl::queue &queue,
                  std::int64_t n,

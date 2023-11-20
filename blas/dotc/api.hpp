@@ -12,7 +12,7 @@
 using namespace Halide;
 
 namespace t2sp::blas::row_major {
-// The API for DOTC. We choose the USM version of oneMKL DPC++ interface (https://oneapi-src.github.io/oneMKL/domains/blas/dotc.html)
+// The API for DOTC. We choose the USM version of oneMKL DPC++ interface (dotc.html)
 template<typename T>
 sycl::event dotc(sycl::queue &queue,
                  std::int64_t n,

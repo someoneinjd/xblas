@@ -12,7 +12,7 @@
 using namespace Halide;
 
 namespace t2sp::blas::row_major {
-// The API for SDSDOT. We choose the USM version of oneMKL DPC++ interface (https://oneapi-src.github.io/oneMKL/domains/blas/sdsdot.html)
+// The API for SDSDOT. We choose the USM version of oneMKL DPC++ interface (sdsdot.html)
 sycl::event sdsdot(sycl::queue &queue,
                    std::int64_t n,
                    float sb,

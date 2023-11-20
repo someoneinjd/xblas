@@ -12,7 +12,7 @@
 using namespace Halide;
 
 namespace t2sp::blas::row_major {
-// The API for SYMM. We choose the USM version of oneMKL DPC++ interface (https://oneapi-src.github.io/oneMKL/domains/blas/symm.html).
+// The API for SYMM. We choose the USM version of oneMKL DPC++ interface (symm.html).
 template<typename T>
 sycl::event symm(sycl::queue &queue,
                  oneapi::mkl::side left_right,

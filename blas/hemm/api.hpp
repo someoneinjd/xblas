@@ -12,7 +12,7 @@
 using namespace Halide;
 
 namespace t2sp::blas::row_major {
-// The API for HEMM. We choose the USM version of oneMKL DPC++ interface (https://oneapi-src.github.io/oneMKL/domains/blas/hemm.html).
+// The API for HEMM. We choose the USM version of oneMKL DPC++ interface (hemm.html).
 template<typename T>
 sycl::event hemm(sycl::queue &queue,
                  oneapi::mkl::side left_right,

@@ -12,7 +12,7 @@
 using namespace Halide;
 
 namespace t2sp::blas::row_major {
-// The API for AXPY. We choose the USM version of oneMKL DPC++ interface (https://oneapi-src.github.io/oneMKL/domains/blas/axpy.html)
+// The API for AXPY. We choose the USM version of oneMKL DPC++ interface (axpy.html)
 template<typename T>
 sycl::event axpy(sycl::queue &queue,
                  std::int64_t n,

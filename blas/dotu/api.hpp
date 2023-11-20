@@ -12,7 +12,7 @@
 using namespace Halide;
 
 namespace t2sp::blas::row_major {
-// The API for DOTU. We choose the USM version of oneMKL DPC++ interface (https://oneapi-src.github.io/oneMKL/domains/blas/dotu.html)
+// The API for DOTU. We choose the USM version of oneMKL DPC++ interface (dotu.html)
 template<typename T>
 sycl::event dotu(sycl::queue &queue,
                  std::int64_t n,

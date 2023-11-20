@@ -121,7 +121,6 @@ constexpr double Pow(double x, int y) {
 }
 
 // estimates e^(x) for x >= 0 using a taylor series expansion
-// https://en.wikipedia.org/wiki/Taylor_series
 constexpr double Exp(double x, unsigned taylor_terms=32) {
   double factorial = 1.0;
   double power = 1.0;
@@ -136,7 +135,6 @@ constexpr double Exp(double x, unsigned taylor_terms=32) {
 }
 
 // Scale significand using floating-point base exponent
-// see: http://www.cplusplus.com/reference/cmath/scalbn/
 constexpr float Scalbn(float value, int exponent) {
   if (exponent == 0) {
     return value;

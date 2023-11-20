@@ -12,7 +12,7 @@
 using namespace Halide;
 
 namespace t2sp::blas::row_major {
-// The API for SYRK. We choose the USM version of oneMKL DPC++/SYCL interface (https://oneapi-src.github.io/oneMKL/domains/blas/syrk.html) with the
+// The API for SYRK. We choose the USM version of oneMKL DPC++/SYCL interface (syrk.html) with the
 // restriction of standard data types (s, d, c, z) only. In this case, the matrices, alpha and beta all have the same data type.
 // So we define our SYRK interface as a template with a single type T.
 template<typename T>

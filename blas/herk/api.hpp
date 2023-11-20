@@ -12,7 +12,7 @@
 using namespace Halide;
 
 namespace t2sp::blas::row_major {
-// The API for HERK. We choose the USM version of oneMKL DPC++/SYCL interface (https://oneapi-src.github.io/oneMKL/domains/blas/herk.html) with the
+// The API for HERK. We choose the USM version of oneMKL DPC++/SYCL interface (herk.html) with the
 // restriction of standard data types (s, d, c, z) only. In this case, the matrices, alpha and beta all have the same data type.
 // So we define our HERK interface as a template with a single type T.
 template<typename T, typename Treal>

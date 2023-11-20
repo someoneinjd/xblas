@@ -12,7 +12,7 @@
 using namespace Halide;
 
 namespace t2sp::blas::row_major {
-// The API for ASUM. We choose the USM version of oneMKL DPC++ interface (https://oneapi-src.github.io/oneMKL/domains/blas/asum.html)
+// The API for ASUM. We choose the USM version of oneMKL DPC++ interface (asum.html)
 template<typename T, typename T_res>
 sycl::event asum(sycl::queue &queue,
                  std::int64_t n,
