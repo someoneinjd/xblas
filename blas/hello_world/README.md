@@ -1,9 +1,11 @@
 # Multi-kernel example
 
 This example demonstrates the following calculation of vectors:
+
 $$
 (\alpha\vec x+\beta\vec y)\cdot\vec z
 $$
+
 where $\alpha$ and $\beta$ are scalars, and $\vec{x}$ , $\vec{y}$ , $\vec z$ are vectors. It requires two BLAS routines: `AXPY` and `DOT`.
 
 ## The design
