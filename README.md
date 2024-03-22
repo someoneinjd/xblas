@@ -5,7 +5,6 @@ This directory includes OneMKL-compatible implementations of BLAS kernels that a
 ## File structure
 
 * [blas](blas/README.md) - BLAS kernels.
-* [model](model/README.md) - The preformance prediction model and exposed components with stream interface.
 * `include`: common headers used by the kernels.
 * `test`: Google test infrastructure and common headers for tests
 * `tools` - compiler and headers of the productive language

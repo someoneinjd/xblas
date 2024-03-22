@@ -48,8 +48,12 @@ int main()
     Load_Y >> DY >> FIFO(256);
     Z >> FIFO(256) >> DZ >> Out;
 
+
+    auto x = expose("axpy", {uX});
+    auto y = expose("xyloader", {DX, DY});
+
     // Compile the kernel to an FPGA bitstream, and expose a C interface for the host to invoke
-    Out.compile_to_oneapi(OUTPUT_FILE, {Alpha, X, IncX, Beta, Y, IncY}, KERNEL, IntelFPGA);
+    Out.compile_to_oneapi(OUTPUT_FILE, {Alpha, X, IncX, Beta, Y, IncY}, KERNEL, {x, y}, IntelFPGA);
     printf("Success\n");
     return 0;
 }

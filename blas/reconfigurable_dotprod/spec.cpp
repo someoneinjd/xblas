@@ -82,7 +82,10 @@ int main()
     Check_Load_Y >> DY.out(kkk) >> FIFO(256);
     Out >> FIFO(256) >> DOut >> Output;
 
-    Output.compile_to_oneapi(OUTPUT_FILE, {ConjugateX, X, IncX, SignBitY, Y, IncY, SqrtRet}, KERNEL, IntelFPGA);
+    auto x = expose("dot", {uZ_2});
+    auto y = expose("zloader", {DY});
+
+    Output.compile_to_oneapi(OUTPUT_FILE, {ConjugateX, X, IncX, SignBitY, Y, IncY, SqrtRet}, KERNEL, {x, y}, IntelFPGA);
     printf("Success\n");
     return 0;
 }

@@ -1,1 +1,0 @@
-{"gemv": ["KK", "II", "III"], "mean": ["KK", "KKK"], "qrd": ["I", "J", "K"], "stddev": ["KK", "KKK"], "syrk": ["III", "JJJ", "KKK"], "trsm": ["I", "K", "II", "JJ"]}

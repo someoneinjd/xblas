@@ -1,3 +1,32 @@
+/* Halide.h -- interface for the 'Halide' library.
+
+   Copyright (c) 2012-2018 MIT CSAIL, Google Inc., and other contributors
+   
+   Developed by:
+   
+     The Halide team
+     http://halide-lang.org
+   
+   Permission is hereby granted, free of charge, to any person obtaining a copy of
+   this software and associated documentation files (the "Software"), to deal in
+   the Software without restriction, including without limitation the rights to
+   use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+   of the Software, and to permit persons to whom the Software is furnished to do
+   so, subject to the following conditions:
+   
+   The above copyright notice and this permission notice shall be included in all
+   copies or substantial portions of the Software.
+   
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+   AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+   SOFTWARE.
+
+*/
+
 #ifndef HALIDE_H
 #define HALIDE_H
 
@@ -1319,7 +1348,7 @@ typedef enum halide_target_feature_t {
     halide_target_feature_fuzz_float_stores, ///< On every floating point store, set the last bit of the mantissa to zero. Pipelines for which the output is very different with this feature enabled may also produce very different output on different processors.
     halide_target_feature_soft_float_abi, ///< Enable soft float ABI. This only enables the soft float ABI calling convention, which does not necessarily use soft floats.
     halide_target_feature_msan, ///< Enable hooks for MSAN support.
-    halide_target_feature_avx512, ///< Enable the base AVX512 subset supported by all AVX512 architectures. The specific feature sets are AVX-512F and AVX512-CD.
+    halide_target_feature_avx512, ///< Enable the base AVX512 subset supported by all AVX512 architectures. The specific feature sets are AVX-512F and AVX512-CD. See https://en.wikipedia.org/wiki/AVX-512 for a description of each AVX subset.
     halide_target_feature_avx512_knl, ///< Enable the AVX512 features supported by Knight's Landing chips, such as the Xeon Phi x200. This includes the base AVX512 set, and also AVX512-CD and AVX512-ER.
     halide_target_feature_avx512_skylake, ///< Enable the AVX512 features supported by Skylake Xeon server processors. This adds AVX512-VL, AVX512-BW, and AVX512-DQ to the base set. The main difference from the base AVX512 set is better support for small integer ops. Note that this does not include the Knight's Landing features. Note also that these features are not available on Skylake desktop and mobile processors.
     halide_target_feature_avx512_cannonlake, ///< Enable the AVX512 features expected to be supported by future Cannonlake processors. This includes all of the Skylake features, plus AVX512-IFMA and AVX512-VBMI.
@@ -1918,7 +1947,7 @@ extern double halide_float16_bits_to_double(uint16_t);
  * 32 most-recently used allocations are preserved, regardless of
  * their size. Additionally, if a call to cuMalloc results in an
  * out-of-memory error, the entire cache is flushed and the allocation
- * is retried.
+ * is retried. See https://github.com/halide/Halide/issues/4093
  *
  * If set to false, releases all unused device allocations back to the
  * underlying device APIs. For finer-grained control, see specific
@@ -12064,6 +12093,15 @@ Expr conditional_conjugate(Expr condition, Expr x);
  * of conditional_sign_c32/c64 */
 Expr conditional_signbit(Expr condition, Expr x);
 
+template <typename ...Args>
+inline Expr abstract(const std::string &op_name, Expr x, Args &&... args) {
+    auto t = x.type();
+    return Internal::Call::make(
+            t, "abstract",
+            {Internal::StringImm::make(op_name), std::move(x), std::forward<Args>(args)...},
+            Internal::Call::PureExtern);
+}
+
 /** Return the greatest whole number less than or equal to a
  * floating-point expression. If the argument is not floating-point,
  * it is cast to Float(32). The return value is still in floating
@@ -13387,6 +13425,9 @@ public:
      *     Metal: Metal source code
      *     Hexagon: llvm bitcode for Hexagon
      *
+     * At present, this API is not fully working. See Issue:
+     *     https://github.com/halide/Halide/issues/1971
+     *
      * The name is used as a unique identifier for the external code
      * and duplicates will be reduced to a single instance. Halide
      * does not do anything other than to compare names for
@@ -13401,6 +13442,9 @@ public:
     /** Construct an ExternalCode container from C++ source code. This
      * container can be used to insert its code into C++ output from
      * Halide.
+     *
+     * At present, this API is not fully working. See Issue:
+     *     https://github.com/halide/Halide/issues/1971
      *
      * The name is used as a unique identifier for the external code
      * and duplicates will be reduced to a single instance. Halide
@@ -13654,6 +13698,58 @@ void *get_symbol_address(const char *s);
 #include <string>
 
 
+/*******************************************************************************
+* Copyright 2021 Intel Corporation
+*
+* Licensed under the BSD-2-Clause Plus Patent License (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+* https://opensource.org/licenses/BSDplusPatent
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions
+* and limitations under the License.
+*
+*
+* SPDX-License-Identifier: BSD-2-Clause-Patent
+*******************************************************************************/
+#ifndef T2S_EXPOSE_H
+#define T2S_EXPOSE_H
+
+#include <string>
+#include <set>
+#include <vector>
+
+
+using std::string;
+using std::set;
+using std::vector;
+
+namespace Halide {
+struct Stensor;
+struct URE;
+namespace Internal {
+struct GetName {
+    GetName(const Stensor &s);
+    GetName(const URE &u);
+    string name;
+};
+}
+
+struct Expose {
+    string func_name;
+    set<string> parts;
+};
+
+Expose expose(const string &func_name, const vector<Internal::GetName> &parts);
+
+}
+
+#endif
+
 namespace Halide {
 
 /** Enums specifying various kinds of outputs that can be produced from a Halide Pipeline. */
@@ -13796,7 +13892,7 @@ public:
 
     /** Compile a halide Module to variety of outputs, depending on
      * the fields set in output_files. */
-    void compile(const std::map<Output, std::string> &output_files) const;
+    void compile(const std::map<Output, std::string> &output_files, const std::vector<Expose> &exposed_parts = {}) const;
 
     /** Compile a halide Module to in-memory object code. Currently
      * only supports LLVM based compilation, but should be extended to
@@ -14351,6 +14447,7 @@ public:
 namespace Halide {
 
 struct Argument;
+struct Expose;
 class Func;
 struct PipelineContents;
 
@@ -14523,6 +14620,14 @@ public:
     /** Globally set the default autoscheduler method to use whenever
      * autoscheduling any Pipeline when no name is specified. If the autoscheduler_name isn't in the
      * current table of known autoschedulers, assert-fail.
+     *
+     * At this time, well-known autoschedulers include:
+     *  "Mullapudi2016" -- heuristics-based; the first working autoscheduler; currently built in to libHalide
+     *                     see http://graphics.cs.cmu.edu/projects/halidesched/
+     *  "Adams2019"     -- aka "the ML autoscheduler"; currently located in apps/autoscheduler
+     *                     see https://halide-lang.org/papers/autoscheduler2019.html
+     *  "Li2018"        -- aka "the gradient autoscheduler"; currently located in apps/gradient_autoscheduler.
+     *                     see https://people.csail.mit.edu/tzumao/gradient_halide
      */
     static void set_default_autoscheduler_name(const std::string &autoscheduler_name);
 
@@ -14607,6 +14712,7 @@ public:
     void compile_to_oneapi(const std::string &filename,
                            const std::vector<Argument> &,
                            const std::string &fn_name,
+                           const std::vector<Expose> &,
                            const Target &target = get_target_from_environment());
 
     /** Write out an internal representation of lowered code. Useful
@@ -16167,6 +16273,8 @@ std::vector<Var> make_argument_list(int dimensionality);
 * you may not use this file except in compliance with the License.
 * You may obtain a copy of the License at
 *
+* https://opensource.org/licenses/BSDplusPatent
+*
 * Unless required by applicable law or agreed to in writing,
 * software distributed under the License is distributed on an "AS IS" BASIS,
 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -17510,7 +17618,7 @@ typedef enum halide_target_feature_t {
     halide_target_feature_fuzz_float_stores, ///< On every floating point store, set the last bit of the mantissa to zero. Pipelines for which the output is very different with this feature enabled may also produce very different output on different processors.
     halide_target_feature_soft_float_abi, ///< Enable soft float ABI. This only enables the soft float ABI calling convention, which does not necessarily use soft floats.
     halide_target_feature_msan, ///< Enable hooks for MSAN support.
-    halide_target_feature_avx512, ///< Enable the base AVX512 subset supported by all AVX512 architectures. The specific feature sets are AVX-512F and AVX512-CD.
+    halide_target_feature_avx512, ///< Enable the base AVX512 subset supported by all AVX512 architectures. The specific feature sets are AVX-512F and AVX512-CD. See https://en.wikipedia.org/wiki/AVX-512 for a description of each AVX subset.
     halide_target_feature_avx512_knl, ///< Enable the AVX512 features supported by Knight's Landing chips, such as the Xeon Phi x200. This includes the base AVX512 set, and also AVX512-CD and AVX512-ER.
     halide_target_feature_avx512_skylake, ///< Enable the AVX512 features supported by Skylake Xeon server processors. This adds AVX512-VL, AVX512-BW, and AVX512-DQ to the base set. The main difference from the base AVX512 set is better support for small integer ops. Note that this does not include the Knight's Landing features. Note also that these features are not available on Skylake desktop and mobile processors.
     halide_target_feature_avx512_cannonlake, ///< Enable the AVX512 features expected to be supported by future Cannonlake processors. This includes all of the Skylake features, plus AVX512-IFMA and AVX512-VBMI.
@@ -18109,7 +18217,7 @@ extern double halide_float16_bits_to_double(uint16_t);
  * 32 most-recently used allocations are preserved, regardless of
  * their size. Additionally, if a call to cuMalloc results in an
  * out-of-memory error, the entire cache is flushed and the allocation
- * is retried.
+ * is retried. See https://github.com/halide/Halide/issues/4093
  *
  * If set to false, releases all unused device allocations back to the
  * underlying device APIs. For finer-grained control, see specific
@@ -27225,6 +27333,24 @@ namespace Internal {
 } // namespace Halide
 
 #endif
+/*******************************************************************************
+* Copyright 2021 Intel Corporation
+*
+* Licensed under the BSD-2-Clause Plus Patent License (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+* https://opensource.org/licenses/BSDplusPatent
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions
+* and limitations under the License.
+*
+*
+* SPDX-License-Identifier: BSD-2-Clause-Patent
+*******************************************************************************/
 #ifndef T2S_GATHER_H
 #define T2S_GATHER_H
 
@@ -27247,6 +27373,24 @@ extern Stmt gather_data(Stmt s, const std::map<std::string, Function> &env);
 }
 #endif
 
+/*******************************************************************************
+* Copyright 2021 Intel Corporation
+*
+* Licensed under the BSD-2-Clause Plus Patent License (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+* https://opensource.org/licenses/BSDplusPatent
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions
+* and limitations under the License.
+*
+*
+* SPDX-License-Identifier: BSD-2-Clause-Patent
+*******************************************************************************/
 #ifndef T2S_SCATTERANDBUFFER_H
 #define T2S_SCATTERANDBUFFER_H
 
@@ -28249,6 +28393,7 @@ public:
     void compile_to_oneapi(const std::string &filename,
                            const std::vector<Argument> &,
                            const std::string &fn_name = "",
+                           const std::vector<Expose> & exposed_parts = {},
                            const Target &target = get_target_from_environment());
 
     /** Write out an internal representation of lowered code. Useful
@@ -28967,7 +29112,7 @@ public:
      * since per-element mutex lock on vectorized operation leads to a
      * deadlock.
      * Vectorization of predicated RVars (through rdom.where()) on CPU
-     * is also unsupported yet
+     * is also unsupported yet (see https://github.com/halide/Halide/issues/4298).
      * 8-bit and 16-bit atomics on GPU are also not supported. */
     Func &atomic(bool override_associativity_test = false);
 
@@ -32539,7 +32684,7 @@ public:
         return "oneapi";
     }
 
-    std::string compile(const Module &input);
+    std::string compile(const Module &input, const std::vector<Expose> &exposed_parts);
 
 protected:
     class CodeGen_Clear_OneAPI_C : public CodeGen_Clear_C {
@@ -32759,6 +32904,7 @@ protected:
             std::string conditional_conjugate(const Call *op);
             std::string conditional_sqrt(const Call *op);
             std::string conditional_signbit(const Call *op);
+            std::string abstract(const Call *op);
 
             // Defined in DeviceInterface.cpp
             std::string halide_oneapi_device_interface(const Call *op){
@@ -32792,27 +32938,42 @@ protected:
             {"conditional_signbit_f32", &ExternCallFuncs::conditional_signbit},
             {"conditional_signbit_f64", &ExternCallFuncs::conditional_signbit},
             {"conditional_signbit_c32", &ExternCallFuncs::conditional_signbit},
-            {"conditional_signbit_c64", &ExternCallFuncs::conditional_signbit}
+            {"conditional_signbit_c64", &ExternCallFuncs::conditional_signbit},
+            {"abstract", &ExternCallFuncs::abstract}
         };
 
         // Create a simple assert(false) depending on the id_cond passed in
         void create_assertion(const std::string &id_cond, const std::string &id_msg);
 
+        struct ExposedFuncsInfo {
+            std::set<std::string> parts;
+            std::set<std::string> channels;
+            std::set<std::string> args;
+            std::vector<std::string> stmts; 
+        };
+        std::map<std::string, ExposedFuncsInfo> exposed_funcs;
+
     public:
-        EmitOneAPIFunc(CodeGen_Clear_OneAPI_C* parent, std::ostringstream &s, Target t) : CodeGen_Clear_OneAPI_C(s, t),
-            parent(parent) { // Note this assocates s with stream in CodeGen_Clear_OneAPI_C, which is inherited from IRPrinter
+        EmitOneAPIFunc(CodeGen_Clear_OneAPI_C* parent, std::ostringstream &s, Target t, const std::vector<Expose> &exposed_parts)
+            : CodeGen_Clear_OneAPI_C(s, t), parent(parent) {
+                // Note this assocates s with stream in CodeGen_Clear_OneAPI_C, which is inherited from IRPrinter
                 stream_ptr = &s;
                 ext_funcs.p = this;
                 currently_inside_kernel = false;
+                for (const auto &part : exposed_parts) {
+                    exposed_funcs[part.func_name].parts = part.parts;
+                }
         }
 
         void compile(const LoweredFunc &func) override;
         void add_kernel(Stmt stmt,
                         const std::string &name,
-                        const std::vector<DeviceArgument> &args);
+                        const std::vector<DeviceArgument> &args, 
+                        decltype(exposed_funcs.end()) exposed_func);
         std::string get_str();
         void clean_stream();
-        void write_runtime_headers(const std::vector<std::string> &tokens_in_func_name);
+        void write_runtime_headers(const std::vector<std::string> &tokens_in_func_name, std::ostream &os);
+        void write_exposed_funcs(std::ostream &os);
     };
 };
 
@@ -34744,7 +34905,7 @@ namespace Elf {
 // Object datastructure owns all of the objects. This namespace exists
 // because it is very difficult to use LLVM's object parser to modify
 // an object (it's fine for parsing only). This was built using
-// 
+// http://www.skyfree.org/linux/references/ELF_Format.pdf as a reference
 // for the ELF structs and constants.
 
 class Object;
@@ -36040,7 +36201,7 @@ Stmt fuzz_float_stores(Stmt s);
  *
  * (Note that there are older variations of Generator that differ from what's
  * documented above; these are still supported but not described here. See
- * 
+ * https://github.com/halide/Halide/wiki/Old-Generator-Documentation for
  * more information.)
  */
 
@@ -43620,6 +43781,7 @@ namespace Internal {
  *
  * In practice, this problem causes problems for unrolling, and
  * arbitrarily-bad overconservative behavior in bounds inference
+ * (e.g. https://github.com/halide/Halide/issues/3697 )
  *
  * The function below attempts to address this by walking the IR,
  * remembering whether each let variable is monotonic increasing,
@@ -44350,6 +44512,24 @@ void add_legacy_wrapper(Module m, const LoweredFunc &fn);
 }  // namespace Halide
 
 #endif
+/*******************************************************************************
+* Copyright 2021 Intel Corporation
+*
+* Licensed under the BSD-2-Clause Plus Patent License (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+* https://opensource.org/licenses/BSDplusPatent
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions
+* and limitations under the License.
+*
+*
+* SPDX-License-Identifier: BSD-2-Clause-Patent
+*******************************************************************************/
 #ifndef T2S_AUTORUNKERNELS_H
 #define T2S_AUTORUNKERNELS_H
 
@@ -44373,6 +44553,24 @@ extern Stmt autorun_kernels(Stmt s, const std::map<std::string, Function> &env);
 }
 
 #endif
+/*******************************************************************************
+* Copyright 2021 Intel Corporation
+*
+* Licensed under the BSD-2-Clause Plus Patent License (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+* https://opensource.org/licenses/BSDplusPatent
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions
+* and limitations under the License.
+*
+*
+* SPDX-License-Identifier: BSD-2-Clause-Patent
+*******************************************************************************/
 #ifndef T2S_BUILD_CALL_RELATION_H
 #define T2S_BUILD_CALL_RELATION_H
 
@@ -45737,7 +45935,7 @@ typedef enum halide_target_feature_t {
     halide_target_feature_fuzz_float_stores, ///< On every floating point store, set the last bit of the mantissa to zero. Pipelines for which the output is very different with this feature enabled may also produce very different output on different processors.
     halide_target_feature_soft_float_abi, ///< Enable soft float ABI. This only enables the soft float ABI calling convention, which does not necessarily use soft floats.
     halide_target_feature_msan, ///< Enable hooks for MSAN support.
-    halide_target_feature_avx512, ///< Enable the base AVX512 subset supported by all AVX512 architectures. The specific feature sets are AVX-512F and AVX512-CD.
+    halide_target_feature_avx512, ///< Enable the base AVX512 subset supported by all AVX512 architectures. The specific feature sets are AVX-512F and AVX512-CD. See https://en.wikipedia.org/wiki/AVX-512 for a description of each AVX subset.
     halide_target_feature_avx512_knl, ///< Enable the AVX512 features supported by Knight's Landing chips, such as the Xeon Phi x200. This includes the base AVX512 set, and also AVX512-CD and AVX512-ER.
     halide_target_feature_avx512_skylake, ///< Enable the AVX512 features supported by Skylake Xeon server processors. This adds AVX512-VL, AVX512-BW, and AVX512-DQ to the base set. The main difference from the base AVX512 set is better support for small integer ops. Note that this does not include the Knight's Landing features. Note also that these features are not available on Skylake desktop and mobile processors.
     halide_target_feature_avx512_cannonlake, ///< Enable the AVX512 features expected to be supported by future Cannonlake processors. This includes all of the Skylake features, plus AVX512-IFMA and AVX512-VBMI.
@@ -46336,7 +46534,7 @@ extern double halide_float16_bits_to_double(uint16_t);
  * 32 most-recently used allocations are preserved, regardless of
  * their size. Additionally, if a call to cuMalloc results in an
  * out-of-memory error, the entire cache is flushed and the allocation
- * is retried.
+ * is retried. See https://github.com/halide/Halide/issues/4093
  *
  * If set to false, releases all unused device allocations back to the
  * underlying device APIs. For finer-grained control, see specific
@@ -54176,6 +54374,24 @@ extern map<string, vector<string>> build_reverse_call_graph(const map<string, ve
 }
 
 #endif
+/*******************************************************************************
+* Copyright 2021 Intel Corporation
+*
+* Licensed under the BSD-2-Clause Plus Patent License (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+* https://opensource.org/licenses/BSDplusPatent
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions
+* and limitations under the License.
+*
+*
+* SPDX-License-Identifier: BSD-2-Clause-Patent
+*******************************************************************************/
 #ifndef T2S_CHANNEL_PROMOTION_H
 #define T2S_CHANNEL_PROMOTION_H
 
@@ -55466,6 +55682,24 @@ extern Stmt channel_promotion(Stmt s, const std::map<std::string, Function>& env
 }
 
 #endif
+/*******************************************************************************
+* Copyright 2021 Intel Corporation
+*
+* Licensed under the BSD-2-Clause Plus Patent License (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+* https://opensource.org/licenses/BSDplusPatent
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions
+* and limitations under the License.
+*
+*
+* SPDX-License-Identifier: BSD-2-Clause-Patent
+*******************************************************************************/
 #ifndef T2S_CHECK_FUNC_H
 #define T2S_CHECK_FUNC_H
 
@@ -56465,6 +56699,15 @@ Expr conditional_conjugate(Expr condition, Expr x);
  * of conditional_sign_c32/c64 */
 Expr conditional_signbit(Expr condition, Expr x);
 
+template <typename ...Args>
+inline Expr abstract(const std::string &op_name, Expr x, Args &&... args) {
+    auto t = x.type();
+    return Internal::Call::make(
+            t, "abstract",
+            {Internal::StringImm::make(op_name), std::move(x), std::forward<Args>(args)...},
+            Internal::Call::PureExtern);
+}
+
 /** Return the greatest whole number less than or equal to a
  * floating-point expression. If the argument is not floating-point,
  * it is cast to Float(32). The return value is still in floating
@@ -57156,6 +57399,7 @@ public:
      *     Hexagon: llvm bitcode for Hexagon
      *
      * At present, this API is not fully working. See Issue:
+     *     https://github.com/halide/Halide/issues/1971
      *
      * The name is used as a unique identifier for the external code
      * and duplicates will be reduced to a single instance. Halide
@@ -57173,6 +57417,7 @@ public:
      * Halide.
      *
      * At present, this API is not fully working. See Issue:
+     *     https://github.com/halide/Halide/issues/1971
      *
      * The name is used as a unique identifier for the external code
      * and duplicates will be reduced to a single instance. Halide
@@ -57228,6 +57473,58 @@ public:
 };
 
 }  // namespace Halide
+
+#endif
+
+/*******************************************************************************
+* Copyright 2021 Intel Corporation
+*
+* Licensed under the BSD-2-Clause Plus Patent License (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+* https://opensource.org/licenses/BSDplusPatent
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions
+* and limitations under the License.
+*
+*
+* SPDX-License-Identifier: BSD-2-Clause-Patent
+*******************************************************************************/
+#ifndef T2S_EXPOSE_H
+#define T2S_EXPOSE_H
+
+#include <string>
+#include <set>
+#include <vector>
+
+
+using std::string;
+using std::set;
+using std::vector;
+
+namespace Halide {
+struct Stensor;
+struct URE;
+namespace Internal {
+struct GetName {
+    GetName(const Stensor &s);
+    GetName(const URE &u);
+    string name;
+};
+}
+
+struct Expose {
+    string func_name;
+    set<string> parts;
+};
+
+Expose expose(const string &func_name, const vector<Internal::GetName> &parts);
+
+}
 
 #endif
 
@@ -57373,7 +57670,7 @@ public:
 
     /** Compile a halide Module to variety of outputs, depending on
      * the fields set in output_files. */
-    void compile(const std::map<Output, std::string> &output_files) const;
+    void compile(const std::map<Output, std::string> &output_files, const std::vector<Expose> &exposed_parts = {}) const;
 
     /** Compile a halide Module to in-memory object code. Currently
      * only supports LLVM based compilation, but should be extended to
@@ -57940,6 +58237,7 @@ public:
 namespace Halide {
 
 struct Argument;
+struct Expose;
 class Func;
 struct PipelineContents;
 
@@ -58112,6 +58410,14 @@ public:
     /** Globally set the default autoscheduler method to use whenever
      * autoscheduling any Pipeline when no name is specified. If the autoscheduler_name isn't in the
      * current table of known autoschedulers, assert-fail.
+     *
+     * At this time, well-known autoschedulers include:
+     *  "Mullapudi2016" -- heuristics-based; the first working autoscheduler; currently built in to libHalide
+     *                     see http://graphics.cs.cmu.edu/projects/halidesched/
+     *  "Adams2019"     -- aka "the ML autoscheduler"; currently located in apps/autoscheduler
+     *                     see https://halide-lang.org/papers/autoscheduler2019.html
+     *  "Li2018"        -- aka "the gradient autoscheduler"; currently located in apps/gradient_autoscheduler.
+     *                     see https://people.csail.mit.edu/tzumao/gradient_halide
      */
     static void set_default_autoscheduler_name(const std::string &autoscheduler_name);
 
@@ -58196,6 +58502,7 @@ public:
     void compile_to_oneapi(const std::string &filename,
                            const std::vector<Argument> &,
                            const std::string &fn_name,
+                           const std::vector<Expose> &,
                            const Target &target = get_target_from_environment());
 
     /** Write out an internal representation of lowered code. Useful
@@ -59111,6 +59418,24 @@ std::vector<Var> make_argument_list(int dimensionality);
 #endif
 
 // T2S related
+/*******************************************************************************
+* Copyright 2021 Intel Corporation
+*
+* Licensed under the BSD-2-Clause Plus Patent License (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+* https://opensource.org/licenses/BSDplusPatent
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions
+* and limitations under the License.
+*
+*
+* SPDX-License-Identifier: BSD-2-Clause-Patent
+*******************************************************************************/
 #ifndef HALIDE_CMDQUEUE_H
 #define HALIDE_CMDQUEUE_H
 
@@ -60445,7 +60770,7 @@ typedef enum halide_target_feature_t {
     halide_target_feature_fuzz_float_stores, ///< On every floating point store, set the last bit of the mantissa to zero. Pipelines for which the output is very different with this feature enabled may also produce very different output on different processors.
     halide_target_feature_soft_float_abi, ///< Enable soft float ABI. This only enables the soft float ABI calling convention, which does not necessarily use soft floats.
     halide_target_feature_msan, ///< Enable hooks for MSAN support.
-    halide_target_feature_avx512, ///< Enable the base AVX512 subset supported by all AVX512 architectures. The specific feature sets are AVX-512F and AVX512-CD.
+    halide_target_feature_avx512, ///< Enable the base AVX512 subset supported by all AVX512 architectures. The specific feature sets are AVX-512F and AVX512-CD. See https://en.wikipedia.org/wiki/AVX-512 for a description of each AVX subset.
     halide_target_feature_avx512_knl, ///< Enable the AVX512 features supported by Knight's Landing chips, such as the Xeon Phi x200. This includes the base AVX512 set, and also AVX512-CD and AVX512-ER.
     halide_target_feature_avx512_skylake, ///< Enable the AVX512 features supported by Skylake Xeon server processors. This adds AVX512-VL, AVX512-BW, and AVX512-DQ to the base set. The main difference from the base AVX512 set is better support for small integer ops. Note that this does not include the Knight's Landing features. Note also that these features are not available on Skylake desktop and mobile processors.
     halide_target_feature_avx512_cannonlake, ///< Enable the AVX512 features expected to be supported by future Cannonlake processors. This includes all of the Skylake features, plus AVX512-IFMA and AVX512-VBMI.
@@ -61044,7 +61369,7 @@ extern double halide_float16_bits_to_double(uint16_t);
  * 32 most-recently used allocations are preserved, regardless of
  * their size. Additionally, if a call to cuMalloc results in an
  * out-of-memory error, the entire cache is flushed and the allocation
- * is retried.
+ * is retried. See https://github.com/halide/Halide/issues/4093
  *
  * If set to false, releases all unused device allocations back to the
  * underlying device APIs. For finer-grained control, see specific
@@ -70160,6 +70485,24 @@ namespace Internal {
 } // namespace Halide
 
 #endif
+/*******************************************************************************
+* Copyright 2021 Intel Corporation
+*
+* Licensed under the BSD-2-Clause Plus Patent License (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+* https://opensource.org/licenses/BSDplusPatent
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions
+* and limitations under the License.
+*
+*
+* SPDX-License-Identifier: BSD-2-Clause-Patent
+*******************************************************************************/
 #ifndef T2S_GATHER_H
 #define T2S_GATHER_H
 
@@ -70182,6 +70525,24 @@ extern Stmt gather_data(Stmt s, const std::map<std::string, Function> &env);
 }
 #endif
 
+/*******************************************************************************
+* Copyright 2021 Intel Corporation
+*
+* Licensed under the BSD-2-Clause Plus Patent License (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+* https://opensource.org/licenses/BSDplusPatent
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions
+* and limitations under the License.
+*
+*
+* SPDX-License-Identifier: BSD-2-Clause-Patent
+*******************************************************************************/
 #ifndef T2S_SCATTERANDBUFFER_H
 #define T2S_SCATTERANDBUFFER_H
 
@@ -71184,6 +71545,7 @@ public:
     void compile_to_oneapi(const std::string &filename,
                            const std::vector<Argument> &,
                            const std::string &fn_name = "",
+                           const std::vector<Expose> & exposed_parts = {},
                            const Target &target = get_target_from_environment());
 
     /** Write out an internal representation of lowered code. Useful
@@ -71902,7 +72264,7 @@ public:
      * since per-element mutex lock on vectorized operation leads to a
      * deadlock.
      * Vectorization of predicated RVars (through rdom.where()) on CPU
-     * is also unsupported yet
+     * is also unsupported yet (see https://github.com/halide/Halide/issues/4298).
      * 8-bit and 16-bit atomics on GPU are also not supported. */
     Func &atomic(bool override_associativity_test = false);
 
@@ -73219,6 +73581,24 @@ public:
 } // namespace Halide
 
 #endif
+/*******************************************************************************
+* Copyright 2021 Intel Corporation
+*
+* Licensed under the BSD-2-Clause Plus Patent License (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+* https://opensource.org/licenses/BSDplusPatent
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions
+* and limitations under the License.
+*
+*
+* SPDX-License-Identifier: BSD-2-Clause-Patent
+*******************************************************************************/
 #ifndef T2S__INTERNAL_CHECK_RECURSIVE_CALLS_H
 #define T2S__INTERNAL_CHECK_RECURSIVE_CALLS_H
 
@@ -75073,6 +75453,24 @@ private:
 }  // namespace Halide
 
 #endif
+/*******************************************************************************
+* Copyright 2021 Intel Corporation
+*
+* Licensed under the BSD-2-Clause Plus Patent License (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+* https://opensource.org/licenses/BSDplusPatent
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions
+* and limitations under the License.
+*
+*
+* SPDX-License-Identifier: BSD-2-Clause-Patent
+*******************************************************************************/
 #ifndef T2S_COMBINE_CHANNELS_H
 #define T2S_COMBINE_CHANNELS_H
 
@@ -75096,6 +75494,24 @@ extern Stmt combine_channels(const Stmt &);
 }
 
 #endif
+/*******************************************************************************
+* Copyright 2021 Intel Corporation
+*
+* Licensed under the BSD-2-Clause Plus Patent License (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+* https://opensource.org/licenses/BSDplusPatent
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions
+* and limitations under the License.
+*
+*
+* SPDX-License-Identifier: BSD-2-Clause-Patent
+*******************************************************************************/
 #ifndef HALIDE_CMDQUEUE_H
 #define HALIDE_CMDQUEUE_H
 
@@ -75113,6 +75529,24 @@ namespace Internal {
 } // namespace Halide
 
 #endif
+/*******************************************************************************
+* Copyright 2021 Intel Corporation
+*
+* Licensed under the BSD-2-Clause Plus Patent License (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+* https://opensource.org/licenses/BSDplusPatent
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions
+* and limitations under the License.
+*
+*
+* SPDX-License-Identifier: BSD-2-Clause-Patent
+*******************************************************************************/
 #ifndef T2S_COMPUTE_LOOP_BOUNDS_H
 #define T2S_COMPUTE_LOOP_BOUNDS_H
 
@@ -75272,6 +75706,24 @@ LoopBounds compute_global_loop_bounds(const Stmt &);
 }  // namespace Halide
 
 #endif
+/*******************************************************************************
+* Copyright 2021 Intel Corporation
+*
+* Licensed under the BSD-2-Clause Plus Patent License (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+* https://opensource.org/licenses/BSDplusPatent
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions
+* and limitations under the License.
+*
+*
+* SPDX-License-Identifier: BSD-2-Clause-Patent
+*******************************************************************************/
 #ifndef T2S_DEBUG_PRINT_H
 #define T2S_DEBUG_PRINT_H
 
@@ -75979,6 +76431,24 @@ void ir_equality_test();
 }  // namespace Halide
 
 #endif
+/*******************************************************************************
+* Copyright 2021 Intel Corporation
+*
+* Licensed under the BSD-2-Clause Plus Patent License (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+* https://opensource.org/licenses/BSDplusPatent
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions
+* and limitations under the License.
+*
+*
+* SPDX-License-Identifier: BSD-2-Clause-Patent
+*******************************************************************************/
 #ifndef T2S_SLICE_EXPR_TREE_H
 #define T2S_SLICE_EXPR_TREE_H
 
@@ -77316,7 +77786,7 @@ typedef enum halide_target_feature_t {
     halide_target_feature_fuzz_float_stores, ///< On every floating point store, set the last bit of the mantissa to zero. Pipelines for which the output is very different with this feature enabled may also produce very different output on different processors.
     halide_target_feature_soft_float_abi, ///< Enable soft float ABI. This only enables the soft float ABI calling convention, which does not necessarily use soft floats.
     halide_target_feature_msan, ///< Enable hooks for MSAN support.
-    halide_target_feature_avx512, ///< Enable the base AVX512 subset supported by all AVX512 architectures. The specific feature sets are AVX-512F and AVX512-CD.
+    halide_target_feature_avx512, ///< Enable the base AVX512 subset supported by all AVX512 architectures. The specific feature sets are AVX-512F and AVX512-CD. See https://en.wikipedia.org/wiki/AVX-512 for a description of each AVX subset.
     halide_target_feature_avx512_knl, ///< Enable the AVX512 features supported by Knight's Landing chips, such as the Xeon Phi x200. This includes the base AVX512 set, and also AVX512-CD and AVX512-ER.
     halide_target_feature_avx512_skylake, ///< Enable the AVX512 features supported by Skylake Xeon server processors. This adds AVX512-VL, AVX512-BW, and AVX512-DQ to the base set. The main difference from the base AVX512 set is better support for small integer ops. Note that this does not include the Knight's Landing features. Note also that these features are not available on Skylake desktop and mobile processors.
     halide_target_feature_avx512_cannonlake, ///< Enable the AVX512 features expected to be supported by future Cannonlake processors. This includes all of the Skylake features, plus AVX512-IFMA and AVX512-VBMI.
@@ -77915,7 +78385,7 @@ extern double halide_float16_bits_to_double(uint16_t);
  * 32 most-recently used allocations are preserved, regardless of
  * their size. Additionally, if a call to cuMalloc results in an
  * out-of-memory error, the entire cache is flushed and the allocation
- * is retried.
+ * is retried. See https://github.com/halide/Halide/issues/4093
  *
  * If set to false, releases all unused device allocations back to the
  * underlying device APIs. For finer-grained control, see specific
@@ -87435,6 +87905,24 @@ public:
 }
 
 #endif
+/*******************************************************************************
+* Copyright 2021 Intel Corporation
+*
+* Licensed under the BSD-2-Clause Plus Patent License (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+* https://opensource.org/licenses/BSDplusPatent
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions
+* and limitations under the License.
+*
+*
+* SPDX-License-Identifier: BSD-2-Clause-Patent
+*******************************************************************************/
 #ifndef T2S_STRUCT_TYPE_H
 #define T2S_STRUCT_TYPE_H
 
@@ -87583,6 +88071,24 @@ string to_string(const map<string, Box> &boxes);
 }
 }
 #endif
+/*******************************************************************************
+* Copyright 2021 Intel Corporation
+*
+* Licensed under the BSD-2-Clause Plus Patent License (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+* https://opensource.org/licenses/BSDplusPatent
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions
+* and limitations under the License.
+*
+*
+* SPDX-License-Identifier: BSD-2-Clause-Patent
+*******************************************************************************/
 #ifndef T2S_DEVECTORIZE_H
 #define T2S_DEVECTORIZE_H
 
@@ -87606,6 +88112,75 @@ extern Stmt devectorize(Stmt s);
 }
 
 #endif  // T2S_DEVECTORIZE_H
+/*******************************************************************************
+* Copyright 2021 Intel Corporation
+*
+* Licensed under the BSD-2-Clause Plus Patent License (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+* https://opensource.org/licenses/BSDplusPatent
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions
+* and limitations under the License.
+*
+*
+* SPDX-License-Identifier: BSD-2-Clause-Patent
+*******************************************************************************/
+#ifndef T2S_EXPOSE_H
+#define T2S_EXPOSE_H
+
+#include <string>
+#include <set>
+#include <vector>
+
+
+using std::string;
+using std::set;
+using std::vector;
+
+namespace Halide {
+struct Stensor;
+struct URE;
+namespace Internal {
+struct GetName {
+    GetName(const Stensor &s);
+    GetName(const URE &u);
+    string name;
+};
+}
+
+struct Expose {
+    string func_name;
+    set<string> parts;
+};
+
+Expose expose(const string &func_name, const vector<Internal::GetName> &parts);
+
+}
+
+#endif
+/*******************************************************************************
+* Copyright 2021 Intel Corporation
+*
+* Licensed under the BSD-2-Clause Plus Patent License (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+* https://opensource.org/licenses/BSDplusPatent
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions
+* and limitations under the License.
+*
+*
+* SPDX-License-Identifier: BSD-2-Clause-Patent
+*******************************************************************************/
 #ifndef T2S__FLATTEN_LOOPS_H
 #define T2S__FLATTEN_LOOPS_H
 
@@ -87631,6 +88206,24 @@ Stmt flatten_outer_loops(Stmt s, string &loop_lvl, const std::map<std::string, F
 }
 
 #endif
+/*******************************************************************************
+* Copyright 2021 Intel Corporation
+*
+* Licensed under the BSD-2-Clause Plus Patent License (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+* https://opensource.org/licenses/BSDplusPatent
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions
+* and limitations under the License.
+*
+*
+* SPDX-License-Identifier: BSD-2-Clause-Patent
+*******************************************************************************/
 #ifndef T2S_GATHER_H
 #define T2S_GATHER_H
 
@@ -87653,6 +88246,24 @@ extern Stmt gather_data(Stmt s, const std::map<std::string, Function> &env);
 }
 #endif
 
+/*******************************************************************************
+* Copyright 2021 Intel Corporation
+*
+* Licensed under the BSD-2-Clause Plus Patent License (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+* https://opensource.org/licenses/BSDplusPatent
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions
+* and limitations under the License.
+*
+*
+* SPDX-License-Identifier: BSD-2-Clause-Patent
+*******************************************************************************/
 #ifndef T2S_ISOLATE_SIGNALS_H
 #define T2S_ISOLATE_SIGNALS_H
 
@@ -87678,6 +88289,24 @@ extern Stmt isolate_signals(const Stmt &s, map<string, Function> &env);
 }
 
 #endif
+/*******************************************************************************
+* Copyright 2021 Intel Corporation
+*
+* Licensed under the BSD-2-Clause Plus Patent License (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+* https://opensource.org/licenses/BSDplusPatent
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions
+* and limitations under the License.
+*
+*
+* SPDX-License-Identifier: BSD-2-Clause-Patent
+*******************************************************************************/
 #ifndef T2S_LATEFUSE_H
 #define T2S_LATEFUSE_H
 
@@ -87690,6 +88319,24 @@ extern Stmt do_late_fuse(Stmt s, const std::map<std::string, Function> &env);
 } // namespace Halide
 
 #endif
+/*******************************************************************************
+* Copyright 2021 Intel Corporation
+*
+* Licensed under the BSD-2-Clause Plus Patent License (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+* https://opensource.org/licenses/BSDplusPatent
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions
+* and limitations under the License.
+*
+*
+* SPDX-License-Identifier: BSD-2-Clause-Patent
+*******************************************************************************/
 #ifndef T2S_LOOP_REMOVAL_H
 #define T2S_LOOP_REMOVAL_H
 
@@ -87711,6 +88358,24 @@ extern Stmt fix_call_args_for_removed_loops(Stmt s, const std::map<std::string, 
 }
 
 #endif
+/*******************************************************************************
+* Copyright 2021 Intel Corporation
+*
+* Licensed under the BSD-2-Clause Plus Patent License (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+* https://opensource.org/licenses/BSDplusPatent
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions
+* and limitations under the License.
+*
+*
+* SPDX-License-Identifier: BSD-2-Clause-Patent
+*******************************************************************************/
 #ifndef T2S_MATH_H
 #define T2S_MATH_H
 
@@ -87726,6 +88391,24 @@ bool get_inverse(const matrix_t &in, matrix_t &out);
 }  // namespace Matrix
 
 #endif
+/*******************************************************************************
+* Copyright 2021 Intel Corporation
+*
+* Licensed under the BSD-2-Clause Plus Patent License (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+* https://opensource.org/licenses/BSDplusPatent
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions
+* and limitations under the License.
+*
+*
+* SPDX-License-Identifier: BSD-2-Clause-Patent
+*******************************************************************************/
 #ifndef T2S_MEM_FETCH_H
 #define T2S_MEM_FETCH_H
 
@@ -87745,6 +88428,24 @@ Stmt do_memory_schedule(Stmt s, const std::map<std::string, Function> &env);
 } // namespace Halide
 
 #endif
+/*******************************************************************************
+* Copyright 2021 Intel Corporation
+*
+* Licensed under the BSD-2-Clause Plus Patent License (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+* https://opensource.org/licenses/BSDplusPatent
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions
+* and limitations under the License.
+*
+*
+* SPDX-License-Identifier: BSD-2-Clause-Patent
+*******************************************************************************/
 #ifndef T2S_MINIMIZE_SHREGS_H
 #define T2S_MINIMIZE_SHREGS_H
 
@@ -87797,6 +88498,24 @@ extern Stmt minimize_shift_registers(Stmt s, const map<string, Function> &env, m
 }
 
 #endif
+/*******************************************************************************
+* Copyright 2021 Intel Corporation
+*
+* Licensed under the BSD-2-Clause Plus Patent License (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+* https://opensource.org/licenses/BSDplusPatent
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions
+* and limitations under the License.
+*
+*
+* SPDX-License-Identifier: BSD-2-Clause-Patent
+*******************************************************************************/
 #ifndef T2S_NOIFSIMPLIFY_H
 #define T2S_NOIFSIMPLIFY_H
 
@@ -87818,6 +88537,24 @@ Stmt no_if_simplify(Stmt s, bool keep_loops=false);
 }
 
 #endif
+/*******************************************************************************
+* Copyright 2021 Intel Corporation
+*
+* Licensed under the BSD-2-Clause Plus Patent License (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+* https://opensource.org/licenses/BSDplusPatent
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions
+* and limitations under the License.
+*
+*
+* SPDX-License-Identifier: BSD-2-Clause-Patent
+*******************************************************************************/
 #ifndef HALIDE_OVERLAY_H
 #define HALIDE_OVERLAY_H
 #include <map>
@@ -87988,6 +88725,24 @@ Overlay &enqueue(Overlay &overlay, int queueNo, T &&... args) {
 
 } // namespace Halide
 #endif
+/*******************************************************************************
+* Copyright 2021 Intel Corporation
+*
+* Licensed under the BSD-2-Clause Plus Patent License (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+* https://opensource.org/licenses/BSDplusPatent
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions
+* and limitations under the License.
+*
+*
+* SPDX-License-Identifier: BSD-2-Clause-Patent
+*******************************************************************************/
 #ifndef T2S_PATTERN_MATCHER_H
 #define T2S_PATTERN_MATCHER_H
 
@@ -88002,6 +88757,24 @@ Stmt match_patterns(Stmt s);
 
 
 #endif
+/*******************************************************************************
+* Copyright 2021 Intel Corporation
+*
+* Licensed under the BSD-2-Clause Plus Patent License (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+* https://opensource.org/licenses/BSDplusPatent
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions
+* and limitations under the License.
+*
+*
+* SPDX-License-Identifier: BSD-2-Clause-Patent
+*******************************************************************************/
 #ifndef T2S_PLACE_H
 #define T2S_PLACE_H
 
@@ -88011,6 +88784,24 @@ Stmt match_patterns(Stmt s);
  *
  */
 
+/*******************************************************************************
+* Copyright 2021 Intel Corporation
+*
+* Licensed under the BSD-2-Clause Plus Patent License (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+* https://opensource.org/licenses/BSDplusPatent
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions
+* and limitations under the License.
+*
+*
+* SPDX-License-Identifier: BSD-2-Clause-Patent
+*******************************************************************************/
 #ifndef T2S_SPACE_TIME_TRANSFORM_H
 #define T2S_SPACE_TIME_TRANSFORM_H
 
@@ -88085,6 +88876,24 @@ Stmt insert_fpga_reg(Stmt s, const map<string, Function> &env);
 }
 
 #endif
+/*******************************************************************************
+* Copyright 2021 Intel Corporation
+*
+* Licensed under the BSD-2-Clause Plus Patent License (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+* https://opensource.org/licenses/BSDplusPatent
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions
+* and limitations under the License.
+*
+*
+* SPDX-License-Identifier: BSD-2-Clause-Patent
+*******************************************************************************/
 #ifndef T2S_PRE_PROCESS_BEFORE_LOWER_H
 #define T2S_PRE_PROCESS_BEFORE_LOWER_H
 
@@ -88120,7 +88929,24 @@ Stmt relay_data(Stmt s, std::map<std::string, Function> &env, const map<string, 
 }
 }
 
-#endif
+#endif/*******************************************************************************
+* Copyright 2021 Intel Corporation
+*
+* Licensed under the BSD-2-Clause Plus Patent License (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+* https://opensource.org/licenses/BSDplusPatent
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions
+* and limitations under the License.
+*
+*
+* SPDX-License-Identifier: BSD-2-Clause-Patent
+*******************************************************************************/
 #ifndef T2S_REMOVE_DEAD_DIMS_H
 #define T2S_REMOVE_DEAD_DIMS_H
 
@@ -88134,7 +88960,24 @@ Stmt remove_dead_dimensions(Stmt s);
 }
 }
 
-#endif
+#endif/*******************************************************************************
+* Copyright 2021 Intel Corporation
+*
+* Licensed under the BSD-2-Clause Plus Patent License (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+* https://opensource.org/licenses/BSDplusPatent
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions
+* and limitations under the License.
+*
+*
+* SPDX-License-Identifier: BSD-2-Clause-Patent
+*******************************************************************************/
 #ifndef T2S_SCATTERANDBUFFER_H
 #define T2S_SCATTERANDBUFFER_H
 
@@ -88153,6 +88996,24 @@ extern Stmt scatter_buffer(Stmt s, const std::map<std::string, Function> &env);
 }
 #endif
 
+/*******************************************************************************
+* Copyright 2021 Intel Corporation
+*
+* Licensed under the BSD-2-Clause Plus Patent License (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+* https://opensource.org/licenses/BSDplusPatent
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions
+* and limitations under the License.
+*
+*
+* SPDX-License-Identifier: BSD-2-Clause-Patent
+*******************************************************************************/
 #ifndef T2S_SLICE_EXPR_TREE_H
 #define T2S_SLICE_EXPR_TREE_H
 
@@ -88237,6 +89098,24 @@ public:
 }
 
 #endif
+/*******************************************************************************
+* Copyright 2021 Intel Corporation
+*
+* Licensed under the BSD-2-Clause Plus Patent License (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+* https://opensource.org/licenses/BSDplusPatent
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions
+* and limitations under the License.
+*
+*
+* SPDX-License-Identifier: BSD-2-Clause-Patent
+*******************************************************************************/
 #ifndef T2S_STANDARDIZE_IR_FOR_OPENCL_H
 #define T2S_STANDARDIZE_IR_FOR_OPENCL_H
 
@@ -88258,8 +89137,27 @@ extern Stmt standardize_ir_for_clear_code_gen(Stmt s);
 }
 
 #endif
+/*******************************************************************************
+* Copyright 2021 Intel Corporation
+*
+* Licensed under the BSD-2-Clause Plus Patent License (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+* https://opensource.org/licenses/BSDplusPatent
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions
+* and limitations under the License.
+*
+*
+* SPDX-License-Identifier: BSD-2-Clause-Patent
+*******************************************************************************/
 #ifndef T2S_STENSOR_H
 #define T2S_STENSOR_H
+
 
 
 namespace Halide {
@@ -88303,6 +89201,7 @@ struct Stensor
     void compile_to_oneapi(const string &file_name,
                            const vector<Argument> &args,
                            const std::string &fn_name,
+                           const vector<Expose> &exposed_parts,
                            Starget t,
                            const vector<Target::Feature> &features = {});
     Stensor &require(const Expr &condition) { conditions_of_asserts.push_back(condition); return *this; }
@@ -88369,6 +89268,24 @@ public:
 }
 
 #endif
+/*******************************************************************************
+* Copyright 2021 Intel Corporation
+*
+* Licensed under the BSD-2-Clause Plus Patent License (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+* https://opensource.org/licenses/BSDplusPatent
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions
+* and limitations under the License.
+*
+*
+* SPDX-License-Identifier: BSD-2-Clause-Patent
+*******************************************************************************/
 #ifndef T2S_STRUCT_TYPE_H
 #define T2S_STRUCT_TYPE_H
 
@@ -88477,6 +89394,24 @@ extern Stmt flatten_tirangualr_loop_nest(Stmt s, const std::map<std::string, Fun
 }
 
 #endif
+/*******************************************************************************
+* Copyright 2021 Intel Corporation
+*
+* Licensed under the BSD-2-Clause Plus Patent License (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+* https://opensource.org/licenses/BSDplusPatent
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions
+* and limitations under the License.
+*
+*
+* SPDX-License-Identifier: BSD-2-Clause-Patent
+*******************************************************************************/
 #ifndef HALIDE_UTILITIES_H
 #define HALIDE_UTILITIES_H
 
