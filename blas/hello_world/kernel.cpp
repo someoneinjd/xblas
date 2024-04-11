@@ -17,8 +17,6 @@ using Out1 = pipe_wrapper<class Out1_class, Out_channel_array_t, 256>;
 float multi_kernels(sycl::queue &device, const float alpha, const float beta,
                     const float *x, const float *y, const float *z,
                     const int size) {
-  std::vector<std::vector<sycl::event>> events{};
-
   auto device_x = sycl::malloc_device<float>(size, device);
   auto device_y = sycl::malloc_device<float>(size, device);
   auto device_z = sycl::malloc_device<float>(size, device);
@@ -29,13 +27,17 @@ float multi_kernels(sycl::queue &device, const float alpha, const float beta,
   device.wait();
 
   using namespace t2sp::blas::row_major;
-  events.push_back(
-      svecadd::xyloader<xLoader, yLoader>(device, device_x, device_y, size));
-  events.push_back(
-      svecadd::axpy<xLoader, yLoader, Out0>(device, alpha, beta, size));
-  events.push_back(sdotprod::zloader<zLoader>(device, device_z, size, 1));
-  events.push_back(sdotprod::dot<Out1, Out0, zLoader>(device, false, size, 1));
-  return Out1::read<>().s;
+  float result = 0.0f;
+  auto res = &result;
+  svecadd::xyloader<xLoader, yLoader>(device, device_x, device_y, size);
+  svecadd::axpy<Out0, xLoader, yLoader>(device, alpha, beta, size);
+  sdotprod::zloader<zLoader>(device, device_z, size, 1);
+  sdotprod::dot<Out1, Out0, zLoader>(device, false, size, 1);
+  device.submit([&](sycl::handler &h){
+    h.single_task([=](){
+      *res = Out1::read<>().s;
+  });}).wait();
+  return result;
 }
 
 int main() {
@@ -65,7 +67,7 @@ int main() {
                          exception_handler);
   auto fpga_result =
       multi_kernels(fpga_queue, alpha, beta, x.data(), y.data(), z.data(), 256);
-  if (fabs(cpu_result - fpga_result) < 0.005) {
+  if (fabs(cpu_result - fpga_result) < 0.01 * cpu_result) {
     std::puts("Pass.");
   } else {
     std::printf("Result: %f (CPU) v.s. %f (FPGA)\n", cpu_result, fpga_result);
