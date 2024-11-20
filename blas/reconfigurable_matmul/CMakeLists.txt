@@ -120,7 +120,7 @@ foreach(TYPEA ${TYPES})
                                                -I${HALIDE_TOOLS_PATH}/include
                                                -std=gnu++11 -O0 -g
                                                ${RECONFIGURABLE_MATMUL_PATH}/spec.cpp
-                                               -L${HALIDE_TOOLS_PATH}/lib -lpthread -lz -ldl -lHalide
+                                               -L${HALIDE_TOOLS_PATH}/lib -lpthread -ldl -lHalide -lz
                                                -o ${RECONFIGURABLE_MATMUL_PATH}/bin/oneapi_${TYPEA}${TYPEB}${TYPEC}${TYPE_SCALAR}matmul_${SIZE}_${HW}
                                        COMMAND env CLEARCODE=1 ${RECONFIGURABLE_MATMUL_PATH}/bin/oneapi_${TYPEA}${TYPEB}${TYPEC}${TYPE_SCALAR}matmul_${SIZE}_${HW}
                                        COMMAND mv ${RECONFIGURABLE_MATMUL_PATH}/bin/${TYPEA}${TYPEB}${TYPEC}${TYPE_SCALAR}matmul_${SIZE}_${HW}.cpp ${RECONFIGURABLE_MATMUL_PATH}/oneapi/
@@ -215,10 +215,11 @@ foreach(N RANGE 0 ${MAX_TEST_ID})
                                ${PRODUCTIVE_LIBRARIES_PATH}/include/halide_runtime_etc.cpp
                                ${GENERATED_ONEAPI_SOURCE_FILES_FOR_TESTS}
                                -L${HALIDE_TOOLS_PATH}/lib -L$ENV{MKLROOT}/lib/intel64
-                               -lmkl_sycl -lmkl_intel_ilp64 -lmkl_sequential -lmkl_core -lsycl -lOpenCL -lpthread -lm -ldl -lz
+                               -lmkl_sycl -lmkl_intel_ilp64 -lmkl_sequential -lmkl_core -lsycl -lOpenCL -lpthread -lm -ldl
                                -L${GOOGLE_TEST_PATH}/googletest/lib
                                -lgtest -lgtest_main
                                -lHalide
+                               -lz
                                -o ${CURRENT_KERNEL_PATH}/bin/test_${N}
                        DEPENDS oneapi_targets_for_tests
                                ${CURRENT_KERNEL_PATH}/test.cpp

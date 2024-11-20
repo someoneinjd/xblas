@@ -82,7 +82,7 @@ foreach(TYPEA ${TYPES})
                                    -std=gnu++11 -O0 -g
                                    -Wno-tautological-constant-compare
                                    ${RECONFIGURABLE_VECADD_PATH}/spec.cpp
-                                   -L${HALIDE_TOOLS_PATH}/lib -lpthread -lz -ldl -lHalide
+                                   -L${HALIDE_TOOLS_PATH}/lib -lpthread -ldl -lHalide -lz
                                    -D${UPPER_SIZE} -DT2SP_${UPPER_TYPE}VECADD -D${UPPER_HW}
                                    -o ${RECONFIGURABLE_VECADD_PATH}/bin/oneapi_${TYPEA}vecadd_${SIZE}_${HW}
                            COMMAND env CLEARCODE=1 ${RECONFIGURABLE_VECADD_PATH}/bin/oneapi_${TYPEA}vecadd_${SIZE}_${HW}
@@ -172,10 +172,11 @@ add_custom_command(OUTPUT  ${CURRENT_KERNEL_PATH}/bin/test
                            ${PRODUCTIVE_LIBRARIES_PATH}/include/halide_runtime_etc.cpp
                            ${GENERATED_ONEAPI_SOURCE_FILES_FOR_TESTS}
                            -L${HALIDE_TOOLS_PATH}/lib -L$ENV{MKLROOT}/lib/intel64
-                           -lmkl_sycl -lmkl_intel_ilp64 -lmkl_sequential -lmkl_core -lsycl -lOpenCL -lpthread -lm -ldl -lz
+                           -lmkl_sycl -lmkl_intel_ilp64 -lmkl_sequential -lmkl_core -lsycl -lOpenCL -lpthread -lm -ldl
                            -L${GOOGLE_TEST_PATH}/googletest/lib
                            -lgtest -lgtest_main
                            -lHalide
+                           -lz
                            -o ${CURRENT_KERNEL_PATH}/bin/test
                    COMMAND echo ${CURRENT_KERNEL_PATH}/bin/test > tests.sh && chmod a+x tests.sh
                    DEPENDS oneapi_targets_for_tests
